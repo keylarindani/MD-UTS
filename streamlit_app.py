@@ -5,9 +5,9 @@ import pandas as pd
 
 class HotelBookingApp:
     def __init__(self):
-        self.model = self.load_model('best_model_rf.pkl')  # atau xgboost_model.pkl
+        self.model = self.load_model('best_model_rf (1).pkl')  # atau xgboost_model.pkl
         self.encoder = self.load_model('encoder.pkl')
-        self.data = self.load_csv('Dataset_B_hotel.csv')
+        self.data = self.load_csv('Dataset_B_hotel (1).csv')
 
     def load_model(self, path):
         with open(path, 'rb') as f:
