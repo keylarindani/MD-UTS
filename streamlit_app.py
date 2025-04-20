@@ -1,15 +1,14 @@
 import streamlit as st
 import pickle
-import numpy as np
 import pandas as pd
 
 class HotelBookingApp:
     def __init__(self):
-        self.model = self.load_pickle('best_model_rf (2).pkl')  # Ganti nama file jika beda
-        self.encoders = self.load_pickle('encoder (2).pkl')          # berisi {'ohe': ..., 'binary': ...}
-        self.data = self.load_csv('Dataset_B_hotel.csv')         # untuk preview saja
+        self.model = self.load_model('best_model_rf (3).pkl')  # RandomForest after tuning
+        self.encoders = self.load_model('encoder (3).pkl')     # dictionary: {'onehot': ..., 'onehot_cols': [...]}
+        self.data = self.load_csv('Dataset_B_hotel.csv')
 
-    def load_pickle(self, path):
+    def load_model(self, path):
         with open(path, 'rb') as f:
             return pickle.load(f)
 
@@ -21,22 +20,18 @@ class HotelBookingApp:
             return None
 
     def encode_input(self, input_df):
-        df = input_df.copy()
+        encoded_df = input_df.copy()
+        categorical_cols = self.encoders['onehot_cols']
+        ohe = self.encoders['onehot']
 
-        categorical_cols = ['type_of_meal_plan', 'room_type_reserved', 'market_segment_type']
-        binary_cols = ['repeated_guest']
-        numerical_cols = [col for col in df.columns if col not in categorical_cols + binary_cols]
+        # One-hot encode the categorical columns
+        encoded_array = ohe.transform(encoded_df[categorical_cols])
+        encoded_ohe_df = pd.DataFrame(encoded_array, columns=ohe.get_feature_names_out(categorical_cols), index=encoded_df.index)
 
-        # Encode categorical with OneHot
-        ohe = self.encoders['ohe']
-        ohe_encoded = ohe.transform(df[categorical_cols])
-        ohe_df = pd.DataFrame(ohe_encoded, columns=ohe.get_feature_names_out(categorical_cols), index=df.index)
+        # Drop categorical columns and concat with encoded
+        encoded_df = encoded_df.drop(columns=categorical_cols)
+        final_df = pd.concat([encoded_df, encoded_ohe_df], axis=1)
 
-        # Encode binary with LabelEncoder
-        le = self.encoders['binary']
-        df[binary_cols] = df[binary_cols].apply(lambda col: le.transform(col))
-
-        final_df = pd.concat([df[numerical_cols], df[binary_cols], ohe_df], axis=1)
         return final_df
 
     def predict(self, input_df):
@@ -47,7 +42,7 @@ class HotelBookingApp:
 
     def run(self):
         st.title("🏨 Hotel Booking Cancellation Prediction")
-        st.write("Prediksi apakah pemesanan hotel akan **dibatalkan** atau **tidak dibatalkan** berdasarkan informasi yang diberikan.")
+        st.write("Predict whether a hotel booking will be **cancelled** or **not cancelled** based on the input data below.")
         st.markdown("---")
 
         if self.data is not None:
@@ -55,8 +50,9 @@ class HotelBookingApp:
             st.dataframe(self.data.head(50))
             st.markdown("---")
 
-        st.subheader("✏️ Input Booking Data")
+        st.subheader("✏️ Input Booking Information")
 
+        # Test Cases
         test_cases = {
             "Test Case 1": {
                 'no_of_adults': 2,
@@ -98,41 +94,38 @@ class HotelBookingApp:
             }
         }
 
-        selected_case = st.selectbox("📁 Pilih Input:", ["Manual Input"] + list(test_cases.keys()))
+        selected_case = st.selectbox("📁 Choose a Test Case", ["Manual Input"] + list(test_cases.keys()))
 
         if selected_case != "Manual Input":
             user_input = pd.DataFrame([test_cases[selected_case]])
         else:
-            user_input = pd.DataFrame([{
-                'no_of_adults': st.number_input('👥 Jumlah Dewasa', 1, 10, 2),
-                'no_of_children': st.number_input('🧒 Jumlah Anak', 0, 10, 0),
-                'no_of_weekend_nights': st.slider('🛌 Malam Akhir Pekan', 0, 10, 1),
-                'no_of_week_nights': st.slider('📅 Malam Hari Kerja', 0, 10, 2),
-                'type_of_meal_plan': st.selectbox('🍽 Paket Makanan', ['Meal Plan 1', 'Meal Plan 2', 'Meal Plan 3', 'Not Selected']),
-                'required_car_parking_space': st.selectbox('🚗 Parkir Dibutuhkan?', [0, 1]),
-                'room_type_reserved': st.selectbox('🏨 Tipe Kamar', ['Room_Type 1', 'Room_Type 2', 'Room_Type 3', 'Room_Type 4', 'Room_Type 5', 'Room_Type 6', 'Room_Type 7']),
-                'lead_time': st.slider('⏳ Lead Time (hari)', 0, 500, 45),
-                'arrival_year': st.selectbox('📆 Tahun Kedatangan', [2017, 2018]),
-                'arrival_month': st.slider('📆 Bulan Kedatangan', 1, 12, 7),
-                'arrival_date': st.slider('📆 Tanggal Kedatangan', 1, 31, 15),
-                'market_segment_type': st.selectbox('📊 Segment Pasar', ['Online', 'Offline', 'Corporate', 'Aviation', 'Complementary']),
-                'repeated_guest': st.selectbox('🔁 Tamu Berulang?', [0, 1]),
-                'no_of_previous_cancellations': st.slider('❌ Pembatalan Sebelumnya', 0, 10, 0),
-                'no_of_previous_bookings_not_canceled': st.slider('✅ Booking Sukses Sebelumnya', 0, 10, 0),
-                'avg_price_per_room': st.number_input('💰 Harga Rata-Rata Kamar', 0.0, 1000.0, 100.0),
-                'no_of_special_requests': st.slider('⭐ Permintaan Khusus', 0, 5, 1)
+            user_input = pd.DataFrame([{ 
+                'no_of_adults': st.number_input('Number of Adults', 1, 10, 2),
+                'no_of_children': st.number_input('Number of Children', 0, 10, 0),
+                'no_of_weekend_nights': st.number_input('Weekend Nights', 0, 10, 1),
+                'no_of_week_nights': st.number_input('Week Nights', 0, 10, 2),
+                'type_of_meal_plan': st.selectbox('Meal Plan Type', ['Meal Plan 1', 'Meal Plan 2', 'Meal Plan 3', 'Not Selected']),
+                'required_car_parking_space': float(st.selectbox('Car Parking Required?', [0, 1])),
+                'room_type_reserved': st.selectbox('Room Type Reserved', ['Room_Type 1', 'Room_Type 2', 'Room_Type 3', 'Room_Type 4', 'Room_Type 5', 'Room_Type 6', 'Room_Type 7']),
+                'lead_time': st.slider('Lead Time (days)', 0, 500, 45),
+                'arrival_year': st.selectbox('Arrival Year', [2017, 2018]),
+                'arrival_month': st.slider('Arrival Month', 1, 12, 7),
+                'arrival_date': st.slider('Arrival Date', 1, 31, 15),
+                'market_segment_type': st.selectbox('Market Segment Type', ['Online', 'Offline', 'Corporate', 'Aviation', 'Complementary']),
+                'repeated_guest': st.selectbox('Repeated Guest?', [0, 1]),
+                'no_of_previous_cancellations': st.slider('Previous Cancellations', 0, 10, 0),
+                'no_of_previous_bookings_not_canceled': st.slider('Previous Non-Cancelled Bookings', 0, 10, 0),
+                'avg_price_per_room': st.number_input('Average Price per Room', 0.0, 1000.0, 100.0),
+                'no_of_special_requests': st.slider('Special Requests', 0, 5, 1)
             }])
 
         if st.button("🔮 Predict Booking Status"):
-            try:
-                pred, prob = self.predict(user_input)
-                status = "✅ Not Cancelled" if pred == 0 else "❌ Cancelled"
-                st.success(f"### Hasil Prediksi: {status}")
-                st.info(f"### Peluang Pembatalan: {prob:.2%}")
-                st.markdown("#### 🔎 Data Input:")
-                st.dataframe(user_input)
-            except Exception as e:
-                st.error(f"❌ Error saat prediksi: {e}")
+            pred, prob = self.predict(user_input)
+            status = "✅ Not Cancelled" if pred == 0 else "❌ Cancelled"
+            st.success(f"### Prediction: {status}")
+            st.info(f"### Cancellation Probability: {prob:.2%}")
+            st.markdown("#### 🔎 Data Used for Prediction")
+            st.dataframe(user_input)
 
 if __name__ == "__main__":
     app = HotelBookingApp()
