@@ -1,3 +1,7 @@
-streamlit
+streamlit>=1.26.0
+numpy
 pandas
+joblib
 scikit-learn
+seaborn
+randomforest
