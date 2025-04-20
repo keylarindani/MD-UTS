@@ -3,10 +3,10 @@ import pandas as pd
 import pickle
 
 # ========== Load Model dan Encoder ==========
-with open("best_model_rf.pkl", "rb") as f:
+with open("best_model_rf (2).pkl", "rb") as f:
     model = pickle.load(f)
 
-with open("encoder.pkl", "rb") as f:
+with open("encoder (2).pkl", "rb") as f:
     encoder = pickle.load(f)
 
 st.title("🔍 Prediksi Pembatalan Booking Hotel")
