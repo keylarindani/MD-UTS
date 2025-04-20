@@ -4,8 +4,8 @@ import pandas as pd
 
 class HotelBookingApp:
     def __init__(self):
-        self.model = self.load_pickle('best_model_rf.pkl')
-        self.encoder = self.load_pickle('encoder.pkl')
+        self.model = self.load_pickle('best_model_rf (4).pkl')
+        self.encoder = self.load_pickle('encoder (4).pkl')
         self.data = self.load_csv('Dataset_B_hotel.csv')
 
     def load_pickle(self, path):
