@@ -5,8 +5,8 @@ import pandas as pd
 
 class HotelBookingApp:
     def __init__(self):
-        self.model = self.load_pickle('RandomForest_Class.pkl')  # Ganti nama file jika beda
-        self.encoders = self.load_pickle('encoder.pkl')          # berisi {'ohe': ..., 'binary': ...}
+        self.model = self.load_pickle('best_model_rf (2).pkl')  # Ganti nama file jika beda
+        self.encoders = self.load_pickle('encoder (2).pkl')          # berisi {'ohe': ..., 'binary': ...}
         self.data = self.load_csv('Dataset_B_hotel.csv')         # untuk preview saja
 
     def load_pickle(self, path):
