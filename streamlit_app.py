@@ -5,8 +5,8 @@ import pandas as pd
 
 class HotelBookingApp:
     def __init__(self):
-        self.model = self.load_pickle('best_model_rf.pkl')  # <- best model after tuning
-        self.encoder = self.load_pickle('encoder.pkl')  # assumed OneHotEncoder
+        self.model = self.load_pickle('best_model_rf (2).pkl')  # <- best model after tuning
+        self.encoder = self.load_pickle('encoder (2).pkl')  # assumed OneHotEncoder
         self.data = self.load_csv('Dataset_B_hotel.csv')  # optional: preview raw data
 
     def load_pickle(self, path):
